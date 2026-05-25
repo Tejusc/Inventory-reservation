@@ -11,6 +11,7 @@ from app.repositories.in_memory.reservation_repo import InMemoryReservationRepos
 from app.services.item_service import ItemNotFoundError, ItemService
 from app.services.reservation_service import (
     InsufficientQuantityError,
+    InvalidTransitionError,
     ReservationNotFoundError,
     ReservationService,
 )
@@ -67,3 +68,42 @@ def get_reservation(
         return service.get_reservation(reservation_id)
     except ReservationNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+
+
+@router.post("/{reservation_id}/confirm", response_model=ReservationResponse)
+def confirm_reservation(
+    reservation_id: UUID,
+    service: ReservationService = Depends(get_reservation_service),
+) -> ReservationResponse:
+    try:
+        return service.confirm_reservation(reservation_id)
+    except ReservationNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@router.post("/{reservation_id}/cancel", response_model=ReservationResponse)
+def cancel_reservation(
+    reservation_id: UUID,
+    service: ReservationService = Depends(get_reservation_service),
+) -> ReservationResponse:
+    try:
+        return service.cancel_reservation(reservation_id)
+    except ReservationNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+
+@router.post("/{reservation_id}/fulfill", response_model=ReservationResponse)
+def fulfill_reservation(
+    reservation_id: UUID,
+    service: ReservationService = Depends(get_reservation_service),
+) -> ReservationResponse:
+    try:
+        return service.fulfill_reservation(reservation_id)
+    except ReservationNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except InvalidTransitionError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))

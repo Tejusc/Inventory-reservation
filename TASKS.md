@@ -40,18 +40,18 @@ Checked off as each item is completed. Updated after every phase.
 
 ---
 
-## Phase 3 — Reservation Lifecycle 🔜
+## Phase 3 — Reservation Lifecycle ✅
 
-- [ ] Write tests for lifecycle transitions (TDD)
-- [ ] Implement `POST /reservations/{id}/confirm`
-- [ ] Implement `POST /reservations/{id}/cancel`
-- [ ] Implement `POST /reservations/{id}/fulfill`
-- [ ] Status transition guard (invalid transitions raise errors)
-- [ ] Concurrency lock on `reserved_quantity` (threading.Lock in service)
-- [ ] `reserved_quantity` on Item decremented on cancel/fulfill
-- [ ] Run tests — all passing
-- [ ] Update README with Phase 3 endpoints
-- [ ] Push `phase-3` branch and open PR
+- [x] Write tests for lifecycle transitions (TDD)
+- [x] Implement `POST /reservations/{id}/confirm`
+- [x] Implement `POST /reservations/{id}/cancel`
+- [x] Implement `POST /reservations/{id}/fulfill`
+- [x] Status transition guard (invalid transitions raise `InvalidTransitionError`)
+- [x] Concurrency lock (`threading.Lock` in `ReservationService`)
+- [x] `reserved_quantity` decremented on cancel/fulfill; `total_quantity` decremented on fulfill
+- [x] Run tests — 84/84 passing
+- [x] Update README with Phase 3 endpoints
+- [ ] Push `phase-3` branch and open PR ← awaiting your approval
 
 ---
 
