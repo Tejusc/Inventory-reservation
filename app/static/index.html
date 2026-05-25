@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Inventory Reservation System</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    header h1 { font-size: 1.4rem; font-weight: 600; letter-spacing: 0.3px; }
+    header span { font-size: 1.5rem; }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      padding: 24px 32px 0;
+      border-bottom: 2px solid #e2e8f0;
+      background: #f0f2f5;
+    }
+    .tab-btn {
+      padding: 10px 28px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #64748b;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+    .tab-btn:hover:not(.active) { color: #1a1a2e; }
+
+    .tab-panel { display: none; padding: 28px 32px; }
+    .tab-panel.active { display: block; }
+
+    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 24px; align-items: start; }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-header h2 { font-size: 1rem; font-weight: 600; color: #1e293b; }
+    .card-body { padding: 20px; }
+
+    label { display: block; font-size: 0.82rem; font-weight: 500; color: #475569; margin-bottom: 5px; margin-top: 14px; }
+    label:first-child { margin-top: 0; }
+    input, select, textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+      background: #fafbfc;
+    }
+    input:focus, select:focus, textarea:focus { border-color: #3b82f6; background: white; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: #3b82f6; color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #ef4444; color: white; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-ghost { background: #f1f5f9; color: #475569; }
+    .btn-ghost:hover { background: #e2e8f0; }
+    .btn-sm { padding: 5px 10px; font-size: 0.78rem; border-radius: 6px; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-full { width: 100%; justify-content: center; margin-top: 16px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #f8fafc;
+      color: #64748b;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f8fafc; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+    .badge-pending  { background: #fef3c7; color: #92400e; }
+    .badge-confirmed { background: #dbeafe; color: #1e40af; }
+    .badge-fulfilled { background: #d1fae5; color: #065f46; }
+    .badge-cancelled { background: #fee2e2; color: #991b1b; }
+
+    .avail-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 120px;
+    }
+    .bar-track {
+      flex: 1;
+      height: 6px;
+      background: #e2e8f0;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      background: #10b981;
+      transition: width 0.4s;
+    }
+    .bar-fill.warn  { background: #f59e0b; }
+    .bar-fill.danger { background: #ef4444; }
+    .bar-label { font-size: 0.78rem; color: #64748b; white-space: nowrap; }
+
+    .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .toast-container { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 999; }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      animation: slideIn 0.25s ease;
+      max-width: 320px;
+    }
+    .toast-success { background: #10b981; }
+    .toast-error   { background: #ef4444; }
+    @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    .empty { text-align: center; padding: 40px 20px; color: #94a3b8; font-size: 0.9rem; }
+    .empty-icon { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+    .refresh-btn { cursor: pointer; background: none; border: none; color: #94a3b8; font-size: 1rem; padding: 4px; border-radius: 6px; transition: color 0.15s; }
+    .refresh-btn:hover { color: #3b82f6; }
+
+    .stat-row { display: flex; gap: 12px; margin-bottom: 24px; }
+    .stat {
+      flex: 1;
+      background: white;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .stat-label { font-size: 0.78rem; color: #64748b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
+    .stat-value { font-size: 1.8rem; font-weight: 700; color: #1e293b; margin-top: 4px; }
+    .stat-value.blue   { color: #3b82f6; }
+    .stat-value.green  { color: #10b981; }
+    .stat-value.amber  { color: #f59e0b; }
+    .stat-value.red    { color: #ef4444; }
+
+    .filter-row { display: flex; gap: 10px; margin-bottom: 16px; align-items: flex-end; flex-wrap: wrap; }
+    .filter-row label { margin: 0; }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group input, .filter-group select { width: auto; min-width: 140px; }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .tabs, .tab-panel { padding-left: 16px; padding-right: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>📦</span>
+  <h1>Inventory Reservation System</h1>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('items')">🗂 Items</button>
+  <button class="tab-btn" onclick="switchTab('reservations')">📋 Reservations</button>
+</div>
+
+<!-- ═══════════════════ ITEMS TAB ═══════════════════ -->
+<div id="tab-items" class="tab-panel active">
+
+  <div class="stat-row" id="item-stats">
+    <div class="stat"><div class="stat-label">Total Items</div><div class="stat-value blue" id="stat-items">—</div></div>
+    <div class="stat"><div class="stat-label">Total Stock</div><div class="stat-value green" id="stat-stock">—</div></div>
+    <div class="stat"><div class="stat-label">Reserved</div><div class="stat-value amber" id="stat-reserved">—</div></div>
+    <div class="stat"><div class="stat-label">Available</div><div class="stat-value green" id="stat-available">—</div></div>
+  </div>
+
+  <div class="layout">
+    <!-- Create Item Form -->
+    <div class="card">
+      <div class="card-header"><h2>➕ Create Item</h2></div>
+      <div class="card-body">
+        <form id="create-item-form">
+          <label>Name *</label>
+          <input type="text" id="item-name" placeholder="e.g. Widget Pro" required />
+
+          <label>SKU *</label>
+          <input type="text" id="item-sku" placeholder="e.g. WGT-001" required />
+
+          <label>Description</label>
+          <input type="text" id="item-desc" placeholder="Optional" />
+
+          <label>Total Quantity *</label>
+          <input type="number" id="item-qty" placeholder="100" min="0" required />
+
+          <button type="submit" class="btn btn-primary btn-full">Create Item</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Items Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Inventory</h2>
+        <button class="refresh-btn" onclick="loadItems()" title="Refresh">↻</button>
+      </div>
+      <div id="items-table-wrap">
+        <div class="empty"><span class="empty-icon">📦</span>No items yet. Create one!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ RESERVATIONS TAB ═══════════════════ -->
+<div id="tab-reservations" class="tab-panel">
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-value blue" id="stat-res-total">—</div></div>
+    <div class="stat"><div class="stat-label">Pending</div><div class="stat-value amber" id="stat-res-pending">—</div></div>
+    <div class="stat"><div class="stat-label">Confirmed</div><div class="stat-value blue" id="stat-res-confirmed">—</div></div>
+    <div class="stat"><div class="stat-label">Fulfilled</div><div class="stat-value green" id="stat-res-fulfilled">—</div></div>
+  </div>
+
+  <div class="layout">
+    <!-- Create Reservation Form -->
+    <div class="card">
+      <div class="card-header"><h2>➕ Create Reservation</h2></div>
+      <div class="card-body">
+        <form id="create-res-form">
+          <label>Item *</label>
+          <select id="res-item" required>
+            <option value="">— select item —</option>
+          </select>
+
+          <label>Quantity *</label>
+          <input type="number" id="res-qty" placeholder="1" min="1" required />
+
+          <label>Requester ID *</label>
+          <input type="text" id="res-requester" placeholder="e.g. user-123" required />
+
+          <label>Notes</label>
+          <input type="text" id="res-notes" placeholder="Optional" />
+
+          <label>Expires At</label>
+          <input type="datetime-local" id="res-expires" />
+
+          <button type="submit" class="btn btn-primary btn-full">Create Reservation</button>
+        </form>
+
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid #f1f5f9;" />
+
+        <button class="btn btn-warning btn-full" onclick="expireStale()">⏱ Expire Stale Reservations</button>
+      </div>
+    </div>
+
+    <!-- Reservations Table -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Reservations</h2>
+        <button class="refresh-btn" onclick="loadReservations()" title="Refresh">↻</button>
+      </div>
+      <div class="card-body" style="padding-bottom:0; padding-top:14px;">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Status</label>
+            <select id="filter-status" onchange="loadReservations()">
+              <option value="">All</option>
+              <option value="PENDING">Pending</option>
+              <option value="CONFIRMED">Confirmed</option>
+              <option value="FULFILLED">Fulfilled</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Requester</label>
+            <input type="text" id="filter-requester" placeholder="Filter by requester" oninput="loadReservations()" />
+          </div>
+        </div>
+      </div>
+      <div id="res-table-wrap">
+        <div class="empty"><span class="empty-icon">📋</span>No reservations yet.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toasts"></div>
+
+<script>
+const API = '';
+
+// ── utils ────────────────────────────────────────────────────────────────────
+
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(API + path, opts);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.detail || `HTTP ${res.status}`);
+  return data;
+}
+
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString();
+}
+
+function shortId(uuid) {
+  return uuid.slice(0, 8) + '…';
+}
+
+// ── tabs ─────────────────────────────────────────────────────────────────────
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['items','reservations'][i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'items') loadItems();
+  if (name === 'reservations') { loadItems(); loadReservations(); }
+}
+
+// ── items ─────────────────────────────────────────────────────────────────────
+
+let itemsCache = [];
+
+async function loadItems() {
+  try {
+    itemsCache = await api('GET', '/items?limit=500');
+    renderItems();
+    updateItemStats();
+    populateItemDropdown();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function updateItemStats() {
+  const total = itemsCache.length;
+  const stock = itemsCache.reduce((s, i) => s + i.total_quantity, 0);
+  const reserved = itemsCache.reduce((s, i) => s + i.reserved_quantity, 0);
+  const avail = itemsCache.reduce((s, i) => s + i.available_quantity, 0);
+  document.getElementById('stat-items').textContent = total;
+  document.getElementById('stat-stock').textContent = stock;
+  document.getElementById('stat-reserved').textContent = reserved;
+  document.getElementById('stat-available').textContent = avail;
+}
+
+function availBar(item) {
+  const pct = item.total_quantity === 0 ? 0 : Math.round((item.available_quantity / item.total_quantity) * 100);
+  const cls = pct > 50 ? '' : pct > 20 ? 'warn' : 'danger';
+  return `<div class="avail-bar">
+    <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+    <span class="bar-label">${item.available_quantity}/${item.total_quantity}</span>
+  </div>`;
+}
+
+function renderItems() {
+  const wrap = document.getElementById('items-table-wrap');
+  if (!itemsCache.length) {
+    wrap.innerHTML = '<div class="empty"><span class="empty-icon">📦</span>No items yet. Create one!</div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>Name</th><th>SKU</th><th>Availability</th><th>Actions</th>
+    </tr></thead>
+    <tbody>
+      ${itemsCache.map(item => `<tr>
+        <td><strong>${item.name}</strong><br/><span style="color:#94a3b8;font-size:0.78rem">${item.description || ''}</span></td>
+        <td><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.8rem">${item.sku}</code></td>
+        <td>${availBar(item)}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}','${item.name}')">Delete</button></td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+function populateItemDropdown() {
+  const sel = document.getElementById('res-item');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— select item —</option>' +
+    itemsCache.map(i => `<option value="${i.id}" ${i.id === current ? 'selected' : ''}>${i.name} (${i.sku}) — ${i.available_quantity} avail</option>`).join('');
+}
+
+document.getElementById('create-item-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const body = {
+    name: document.getElementById('item-name').value.trim(),
+    sku: document.getElementById('item-sku').value.trim(),
+    description: document.getElementById('item-desc').value.trim() || null,
+    total_quantity: parseInt(document.getElementById('item-qty').value),
+  };
+  try {
+    await api('POST', '/items', body);
+    toast(`Item "${body.name}" created`);
+    e.target.reset();
+    loadItems();
+  } catch (err) { toast(err.message, 'error'); }
+});
+
+async function deleteItem(id, name) {
+  if (!confirm(`Delete "${name}"?`)) return;
+  try {
+    await fetch(API + `/items/${id}`, { method: 'DELETE' });
+    toast(`Deleted "${name}"`);
+    loadItems();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ── reservations ──────────────────────────────────────────────────────────────
+
+async function loadReservations() {
+  const status = document.getElementById('filter-status').value;
+  const requester = document.getElementById('filter-requester').value.trim();
+  let path = '/reservations?limit=500';
+  if (status) path += `&status=${status}`;
+  if (requester) path += `&requester_id=${encodeURIComponent(requester)}`;
+  try {
+    const reservations = await api('GET', path);
+    renderReservations(reservations);
+    updateResStats(reservations);
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function updateResStats(list) {
+  const all = list;
+  document.getElementById('stat-res-total').textContent = all.length;
+  document.getElementById('stat-res-pending').textContent = all.filter(r => r.status === 'PENDING').length;
+  document.getElementById('stat-res-confirmed').textContent = all.filter(r => r.status === 'CONFIRMED').length;
+  document.getElementById('stat-res-fulfilled').textContent = all.filter(r => r.status === 'FULFILLED').length;
+}
+
+function actionButtons(r) {
+  const btns = [];
+  if (r.status === 'PENDING') {
+    btns.push(`<button class="btn btn-success btn-sm" onclick="transition('${r.id}','confirm')">Confirm</button>`);
+    btns.push(`<button class="btn btn-danger btn-sm" onclick="transition('${r.id}','cancel')">Cancel</button>`);
+  }
+  if (r.status === 'CONFIRMED') {
+    btns.push(`<button class="btn btn-primary btn-sm" onclick="transition('${r.id}','fulfill')">Fulfill</button>`);
+    btns.push(`<button class="btn btn-danger btn-sm" onclick="transition('${r.id}','cancel')">Cancel</button>`);
+  }
+  return `<div class="actions">${btns.join('')}</div>`;
+}
+
+function renderReservations(list) {
+  const wrap = document.getElementById('res-table-wrap');
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty"><span class="empty-icon">📋</span>No reservations found.</div>';
+    return;
+  }
+  wrap.innerHTML = `<table>
+    <thead><tr>
+      <th>ID</th><th>Item</th><th>Qty</th><th>Requester</th><th>Status</th><th>Expires</th><th>Actions</th>
+    </tr></thead>
+    <tbody>
+      ${list.map(r => {
+        const item = itemsCache.find(i => i.id === r.item_id);
+        const itemName = item ? item.name : shortId(r.item_id);
+        return `<tr>
+          <td><code style="font-size:0.78rem;color:#94a3b8">${shortId(r.id)}</code></td>
+          <td>${itemName}</td>
+          <td><strong>${r.quantity}</strong></td>
+          <td>${r.requester_id}</td>
+          <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+          <td style="font-size:0.8rem;color:#94a3b8">${r.expires_at ? fmtDate(r.expires_at) : '—'}</td>
+          <td>${actionButtons(r)}</td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+document.getElementById('create-res-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const expiresAt = document.getElementById('res-expires').value;
+  const body = {
+    item_id: document.getElementById('res-item').value,
+    quantity: parseInt(document.getElementById('res-qty').value),
+    requester_id: document.getElementById('res-requester').value.trim(),
+    notes: document.getElementById('res-notes').value.trim() || null,
+    expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
+  };
+  try {
+    await api('POST', '/reservations', body);
+    toast('Reservation created');
+    e.target.reset();
+    loadReservations();
+    loadItems();
+  } catch (err) { toast(err.message, 'error'); }
+});
+
+async function transition(id, action) {
+  try {
+    await api('POST', `/reservations/${id}/${action}`);
+    toast(`Reservation ${action}ed`);
+    loadReservations();
+    loadItems();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function expireStale() {
+  try {
+    const expired = await api('POST', '/reservations/expire-stale');
+    toast(expired.length ? `${expired.length} reservation(s) expired` : 'No stale reservations found');
+    loadReservations();
+    loadItems();
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+// ── init ──────────────────────────────────────────────────────────────────────
+
+loadItems();
+</script>
+</body>
+</html>
