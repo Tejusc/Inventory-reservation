@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from datetime import datetime
 from uuid import UUID
 
 from app.models.enums import ReservationStatus
 from app.models.reservation import Reservation
 from app.repositories.reservation_repository import ReservationRepository
+
+_ACTIVE_STATUSES = {ReservationStatus.PENDING, ReservationStatus.CONFIRMED}
 
 
 class InMemoryReservationRepository(ReservationRepository):
@@ -35,3 +38,11 @@ class InMemoryReservationRepository(ReservationRepository):
         if requester_id is not None:
             results = [r for r in results if r.requester_id == requester_id]
         return results[skip: skip + limit]
+
+    def find_expired(self, before: datetime) -> list[Reservation]:
+        return [
+            r for r in self._store.values()
+            if r.status in _ACTIVE_STATUSES
+            and r.expires_at is not None
+            and r.expires_at < before
+        ]

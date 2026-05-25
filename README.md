@@ -24,9 +24,9 @@ A RESTful API for managing inventory and reservations, built with Python and Fas
 | Phase | Status | Description |
 |-------|--------|-------------|
 | 1 | ✅ Complete | Project scaffold, Items CRUD, availability endpoint |
-| 2 | 🔜 Pending | Reservations — create and query |
-| 3 | 🔜 Pending | Reservation lifecycle — confirm, cancel, fulfill |
-| 4 | 🔜 Pending | Filtering, pagination, expiry |
+| 2 | ✅ Complete | Reservations — create and query with filters and pagination |
+| 3 | ✅ Complete | Reservation lifecycle — confirm, cancel, fulfill with concurrency lock |
+| 4 | ✅ Complete | Expiry — lazy auto-expire on read and batch expire-stale endpoint |
 
 ---
 
@@ -184,6 +184,7 @@ tests/
   test_reservation_routes.py               # Reservation route integration tests
   test_reservation_lifecycle_service.py    # Lifecycle service unit tests (+ concurrency)
   test_reservation_lifecycle_routes.py     # Lifecycle route integration tests
+  test_reservation_expiry.py               # Expiry service + route tests
 requirements.txt
 README.md
 ```
@@ -355,6 +356,20 @@ PENDING ──confirm──▶ CONFIRMED ──fulfill──▶ FULFILLED
 - Any other transition returns `409 Conflict`
 
 **Concurrency:** `create_reservation` and lifecycle mutations are protected by a `threading.Lock` — concurrent requests cannot double-spend available stock.
+
+### Expiry
+
+| Method | Path | Description | Status |
+|--------|------|-------------|--------|
+| POST | `/reservations/expire-stale` | Cancel all PENDING/CONFIRMED reservations past their `expires_at` | 200 |
+
+**Expiry behaviour:**
+
+- `expires_at` is an optional field on any reservation (ISO 8601 datetime)
+- **Lazy auto-expire:** when `GET /reservations/{id}` is called and the reservation is `PENDING` or `CONFIRMED` with an `expires_at` in the past, it is automatically cancelled in-place and the response reflects the new `CANCELLED` status
+- **Batch expire-stale:** `POST /reservations/expire-stale` sweeps all active reservations past their TTL and cancels them, returning the list of newly cancelled reservations
+- In both cases, `reserved_quantity` on the item is released back to available
+- Terminal statuses (`FULFILLED`, `CANCELLED`) are never touched by expiry
 
 ---
 

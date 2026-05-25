@@ -68,6 +68,9 @@ class ReservationService:
         reservation = self._repo.find_by_id(reservation_id)
         if reservation is None:
             raise ReservationNotFoundError(f"Reservation '{reservation_id}' not found")
+        now = datetime.now(timezone.utc)
+        if self._is_expired(reservation, now):
+            return self._do_cancel(reservation)
         return ReservationResponse.model_validate(reservation.model_dump())
 
     def list_reservations(
@@ -142,3 +145,26 @@ class ReservationService:
         )
         self._repo.save(updated)
         return ReservationResponse.model_validate(updated.model_dump())
+
+    # ── expiry ───────────────────────────────────────────────────────────────
+
+    def expire_stale_reservations(self) -> list[ReservationResponse]:
+        """Cancel all PENDING/CONFIRMED reservations past their expires_at."""
+        now = datetime.now(timezone.utc)
+        stale = self._repo.find_expired(before=now)
+        return [self._do_cancel(r) for r in stale]
+
+    @staticmethod
+    def _is_expired(reservation: Reservation, now: datetime) -> bool:
+        return (
+            reservation.expires_at is not None
+            and reservation.expires_at < now
+            and reservation.status in {ReservationStatus.PENDING, ReservationStatus.CONFIRMED}
+        )
+
+    def _do_cancel(self, reservation: Reservation) -> ReservationResponse:
+        with self._lock:
+            self._item_service.adjust_reserved_quantity(
+                reservation.item_id, delta=-reservation.quantity
+            )
+            return self._save_status(reservation, ReservationStatus.CANCELLED)
