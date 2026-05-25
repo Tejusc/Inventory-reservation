@@ -180,8 +180,10 @@ tests/
   conftest.py                     # Shared fixtures
   test_item_service.py            # Item service unit tests
   test_item_routes.py             # Item route integration tests
-  test_reservation_service.py     # Reservation service unit tests
-  test_reservation_routes.py      # Reservation route integration tests
+  test_reservation_service.py              # Reservation service unit tests
+  test_reservation_routes.py               # Reservation route integration tests
+  test_reservation_lifecycle_service.py    # Lifecycle service unit tests (+ concurrency)
+  test_reservation_lifecycle_routes.py     # Lifecycle route integration tests
 requirements.txt
 README.md
 ```
@@ -330,6 +332,29 @@ uvicorn app.main:app --reload
 - `404` — item not found
 - `409` — insufficient available quantity
 - `422` — quantity < 1
+
+### Reservation Lifecycle
+
+| Method | Path | Description | Status |
+|--------|------|-------------|--------|
+| POST | `/reservations/{reservation_id}/confirm` | Confirm a pending reservation | 200 |
+| POST | `/reservations/{reservation_id}/cancel` | Cancel a pending or confirmed reservation | 200 |
+| POST | `/reservations/{reservation_id}/fulfill` | Fulfill a confirmed reservation | 200 |
+
+**Status transition rules:**
+
+```
+PENDING ──confirm──▶ CONFIRMED ──fulfill──▶ FULFILLED
+   │                     │
+   └────cancel────▶ CANCELLED ◀────cancel────┘
+```
+
+- Confirm: `PENDING → CONFIRMED` — holds quantity, no stock change
+- Cancel: `PENDING/CONFIRMED → CANCELLED` — releases reserved quantity back to available
+- Fulfill: `CONFIRMED → FULFILLED` — consumes stock (decrements `total_quantity` and `reserved_quantity`)
+- Any other transition returns `409 Conflict`
+
+**Concurrency:** `create_reservation` and lifecycle mutations are protected by a `threading.Lock` — concurrent requests cannot double-spend available stock.
 
 ---
 

@@ -80,7 +80,6 @@ class ItemService:
             available_quantity=item.available_quantity,
         )
 
-    # Called by reservation service — keeps reserved_quantity consistent
     def adjust_reserved_quantity(self, item_id: UUID, delta: int) -> None:
         item = self._repo.find_by_id(item_id)
         if item is None:
@@ -88,6 +87,20 @@ class ItemService:
         updated = item.model_copy(
             update={
                 "reserved_quantity": item.reserved_quantity + delta,
+                "updated_at": datetime.now(timezone.utc),
+            }
+        )
+        self._repo.save(updated)
+
+    def consume_quantity(self, item_id: UUID, quantity: int) -> None:
+        """Fulfill path: decrement both reserved_quantity and total_quantity."""
+        item = self._repo.find_by_id(item_id)
+        if item is None:
+            raise ItemNotFoundError(f"Item '{item_id}' not found")
+        updated = item.model_copy(
+            update={
+                "reserved_quantity": item.reserved_quantity - quantity,
+                "total_quantity": item.total_quantity - quantity,
                 "updated_at": datetime.now(timezone.utc),
             }
         )
