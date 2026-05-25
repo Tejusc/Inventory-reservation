@@ -1,6 +1,6 @@
 # Inventory Reservation System
 
-A RESTful API for managing inventory and reservations, built with Python and FastAPI.
+A RESTful API for managing inventory and reservations, built with Python and FastAPI — with a built-in interactive UI served at `/`.
 
 ---
 
@@ -13,6 +13,7 @@ A RESTful API for managing inventory and reservations, built with Python and Fas
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [How to Run](#how-to-run)
+- [Interactive UI](#interactive-ui)
 - [Clean Run Process](#clean-run-process)
 - [API Reference](#api-reference)
 - [Demo Script](#demo-script)
@@ -149,6 +150,7 @@ pip install -r requirements.txt
 | Framework | FastAPI 0.111 |
 | Validation | Pydantic v2 |
 | Server | Uvicorn |
+| Frontend | Vanilla HTML/CSS/JS (served by FastAPI) |
 | Testing | pytest + httpx TestClient |
 | Storage | In-memory (DB-ready repository interface) |
 
@@ -158,7 +160,10 @@ pip install -r requirements.txt
 
 ```
 app/
-  main.py                         # FastAPI app factory
+  main.py                         # FastAPI app factory + static file mounting
+  dependencies.py                 # Shared service/repository singletons
+  static/
+    index.html                    # Interactive UI (served at /)
   models/
     enums.py                      # ReservationStatus enum
     item.py                       # Item domain model + request/response schemas
@@ -203,6 +208,21 @@ uvicorn app.main:app --reload
 API will be available at `http://127.0.0.1:8000`
 
 Interactive docs: `http://127.0.0.1:8000/docs`
+
+---
+
+## Interactive UI
+
+Once the server is running, open **http://127.0.0.1:8000/** in your browser.
+
+The UI is a single-page app served directly by FastAPI — no separate frontend server needed.
+
+| Tab | What you can do |
+|-----|----------------|
+| **Items** | Create items, view live availability bar (total / reserved / available), delete items, summary stats |
+| **Reservations** | Create reservations with item picker, filter by status or requester, **Confirm / Cancel / Fulfill** action buttons per row, expire stale reservations in bulk |
+
+All actions update the UI immediately — no page reloads.
 
 ---
 
