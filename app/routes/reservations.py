@@ -4,11 +4,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.dependencies import get_reservation_service
 from app.models.enums import ReservationStatus
 from app.models.reservation import CreateReservationRequest, ReservationResponse
-from app.repositories.in_memory.item_repo import InMemoryItemRepository
-from app.repositories.in_memory.reservation_repo import InMemoryReservationRepository
-from app.services.item_service import ItemNotFoundError, ItemService
+from app.services.item_service import ItemNotFoundError
 from app.services.reservation_service import (
     InsufficientQuantityError,
     InvalidTransitionError,
@@ -17,15 +16,6 @@ from app.services.reservation_service import (
 )
 
 router = APIRouter()
-
-_item_repo = InMemoryItemRepository()
-_item_service = ItemService(repository=_item_repo)
-_reservation_repo = InMemoryReservationRepository()
-_default_service = ReservationService(repository=_reservation_repo, item_service=_item_service)
-
-
-def get_reservation_service() -> ReservationService:
-    return _default_service
 
 
 @router.post("", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)

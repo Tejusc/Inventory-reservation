@@ -37,10 +37,9 @@ def reservation_service(
 def client(item_service: ItemService, reservation_service: ReservationService) -> TestClient:
     app = create_app()
 
-    from app.routes import items as items_module
-    from app.routes import reservations as reservations_module
+    import app.dependencies as deps
 
-    app.dependency_overrides[items_module.get_item_service] = lambda: item_service
-    app.dependency_overrides[reservations_module.get_reservation_service] = lambda: reservation_service
+    app.dependency_overrides[deps.get_item_service] = lambda: item_service
+    app.dependency_overrides[deps.get_reservation_service] = lambda: reservation_service
 
     return TestClient(app)
