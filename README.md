@@ -160,20 +160,28 @@ pip install -r requirements.txt
 app/
   main.py                         # FastAPI app factory
   models/
+    enums.py                      # ReservationStatus enum
     item.py                       # Item domain model + request/response schemas
+    reservation.py                # Reservation domain model + request/response schemas
   routes/
     health.py                     # GET /health
     items.py                      # Items CRUD routes
+    reservations.py               # Reservations routes
   services/
     item_service.py               # Item business logic
+    reservation_service.py        # Reservation business logic
   repositories/
     item_repository.py            # ItemRepository ABC
+    reservation_repository.py     # ReservationRepository ABC
     in_memory/
       item_repo.py                # InMemoryItemRepository
+      reservation_repo.py         # InMemoryReservationRepository
 tests/
   conftest.py                     # Shared fixtures
-  test_item_service.py            # Service-layer unit tests
-  test_item_routes.py             # Route-layer integration tests
+  test_item_service.py            # Item service unit tests
+  test_item_routes.py             # Item route integration tests
+  test_reservation_service.py     # Reservation service unit tests
+  test_reservation_routes.py      # Reservation route integration tests
 requirements.txt
 README.md
 ```
@@ -271,6 +279,57 @@ uvicorn app.main:app --reload
   "available_quantity": 90
 }
 ```
+
+### Reservations
+
+| Method | Path | Description | Status |
+|--------|------|-------------|--------|
+| POST | `/reservations` | Create a reservation | 201 |
+| GET | `/reservations` | List reservations (filterable) | 200 |
+| GET | `/reservations/{reservation_id}` | Get reservation by ID | 200 |
+
+**Query parameters for `GET /reservations`:**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `item_id` | UUID | Filter by item |
+| `status` | string | Filter by status (`PENDING`, `CONFIRMED`, `CANCELLED`, `FULFILLED`) |
+| `requester_id` | string | Filter by requester |
+| `skip` | int | Pagination offset (default 0) |
+| `limit` | int | Page size (default 100, max 500) |
+
+#### Create Reservation — `POST /reservations`
+
+**Request**
+```json
+{
+  "item_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "quantity": 10,
+  "requester_id": "user-123",
+  "notes": "Urgent order",
+  "expires_at": "2026-06-01T00:00:00Z"
+}
+```
+
+**Response 201**
+```json
+{
+  "id": "a1b2c3d4-0000-0000-0000-000000000000",
+  "item_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "quantity": 10,
+  "status": "PENDING",
+  "requester_id": "user-123",
+  "notes": "Urgent order",
+  "expires_at": "2026-06-01T00:00:00Z",
+  "created_at": "2026-05-25T10:00:00Z",
+  "updated_at": "2026-05-25T10:00:00Z"
+}
+```
+
+**Error responses:**
+- `404` — item not found
+- `409` — insufficient available quantity
+- `422` — quantity < 1
 
 ---
 

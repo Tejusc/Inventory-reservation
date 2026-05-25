@@ -24,19 +24,19 @@ Checked off as each item is completed. Updated after every phase.
 
 ---
 
-## Phase 2 — Reservations (Create + Query) 🔜
+## Phase 2 — Reservations (Create + Query) ✅
 
-- [ ] Write tests for Reservation service (TDD)
-- [ ] Write tests for Reservation routes (TDD)
-- [ ] Implement `ReservationStatus` enum
-- [ ] Implement `Reservation` domain model and Pydantic schemas
-- [ ] Implement `ReservationRepository` ABC
-- [ ] Implement `InMemoryReservationRepository`
-- [ ] Implement `ReservationService` (create, get, list)
-- [ ] Implement Reservation routes (`POST /reservations`, `GET /reservations`, `GET /reservations/{id}`)
-- [ ] Run tests — all passing
-- [ ] Update README with Phase 2 endpoints
-- [ ] Push `phase-2` branch and open PR
+- [x] Write tests for Reservation service (TDD)
+- [x] Write tests for Reservation routes (TDD)
+- [x] Implement `ReservationStatus` enum
+- [x] Implement `Reservation` domain model and Pydantic schemas
+- [x] Implement `ReservationRepository` ABC
+- [x] Implement `InMemoryReservationRepository`
+- [x] Implement `ReservationService` (create, get, list with filters)
+- [x] Implement Reservation routes (`POST /reservations`, `GET /reservations`, `GET /reservations/{id}`)
+- [x] Run tests — 53/53 passing
+- [x] Update README with Phase 2 endpoints
+- [ ] Push `phase-2` branch and open PR ← awaiting your approval
 
 ---
 
