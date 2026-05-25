@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from uuid import UUID
 
 from app.models.enums import ReservationStatus
@@ -26,4 +27,9 @@ class ReservationRepository(ABC):
         skip: int = 0,
         limit: int = 100,
     ) -> list[Reservation]:
+        ...
+
+    @abstractmethod
+    def find_expired(self, before: datetime) -> list[Reservation]:
+        """Return all PENDING/CONFIRMED reservations whose expires_at < before."""
         ...

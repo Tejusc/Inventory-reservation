@@ -59,6 +59,13 @@ def list_reservations(
     )
 
 
+@router.post("/expire-stale", response_model=list[ReservationResponse])
+def expire_stale(
+    service: ReservationService = Depends(get_reservation_service),
+) -> list[ReservationResponse]:
+    return service.expire_stale_reservations()
+
+
 @router.get("/{reservation_id}", response_model=ReservationResponse)
 def get_reservation(
     reservation_id: UUID,

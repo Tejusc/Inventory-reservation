@@ -55,12 +55,15 @@ Checked off as each item is completed. Updated after every phase.
 
 ---
 
-## Phase 4 — Filtering, Pagination, Expiry 🔜
+## Phase 4 — Filtering, Pagination, Expiry ✅
 
-- [ ] Write tests for filters and expiry (TDD)
-- [ ] Filter reservations by `status`, `item_id`, `requester_id`
-- [ ] Pagination (`skip` / `limit`) on all list endpoints
-- [ ] Expiry: `expires_at` field honoured — expired reservations auto-released
-- [ ] Run tests — all passing
-- [ ] Update README with Phase 4 query params
-- [ ] Push `phase-4` branch and open PR
+- [x] Write tests for expiry (TDD)
+- [x] Filter reservations by `status`, `item_id`, `requester_id` _(completed in Phase 2)_
+- [x] Pagination (`skip` / `limit`) on all list endpoints _(completed in Phase 2)_
+- [x] `find_expired(before)` added to `ReservationRepository` ABC + in-memory impl
+- [x] Lazy auto-expire: `get_reservation` cancels and releases stock if `expires_at` has passed
+- [x] Batch expiry: `expire_stale_reservations()` in service; `POST /reservations/expire-stale` route
+- [x] Expiry is idempotent — terminal statuses never touched
+- [x] Run tests — 103/103 passing
+- [x] Update README with Phase 4 endpoints and expiry behaviour
+- [ ] Push `phase-4` branch and open PR ← awaiting your approval
