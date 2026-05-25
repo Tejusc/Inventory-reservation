@@ -7,6 +7,7 @@ A RESTful API for managing inventory and reservations, built with Python and Fas
 ## Table of Contents
 
 - [Phases](#phases)
+- [Architecture](#architecture)
 - [Getting Started](#getting-started)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
@@ -25,6 +26,103 @@ A RESTful API for managing inventory and reservations, built with Python and Fas
 | 2 | 🔜 Pending | Reservations — create and query |
 | 3 | 🔜 Pending | Reservation lifecycle — confirm, cancel, fulfill |
 | 4 | 🔜 Pending | Filtering, pagination, expiry |
+
+---
+
+## Architecture
+
+### Layer Diagram
+
+```mermaid
+flowchart TD
+    Client(["HTTP Client"])
+
+    subgraph Routes ["Routes  (app/routes/)"]
+        HR["health.py\nGET /health"]
+        IR["items.py\nCRUD + availability"]
+        RR["reservations.py\n(Phase 2)"]
+    end
+
+    subgraph Services ["Services  (app/services/)"]
+        IS["ItemService\ncreate · get · list · update · delete · availability"]
+        RS["ReservationService\n(Phase 2)"]
+    end
+
+    subgraph Repositories ["Repositories  (app/repositories/)"]
+        IABC["ItemRepository  ‹ABC›"]
+        RABC["ReservationRepository  ‹ABC›"]
+        IMEM["InMemoryItemRepository"]
+        RMEM["InMemoryReservationRepository\n(Phase 2)"]
+    end
+
+    DB[("Database\n(future swap-in)")]
+
+    Client -->|HTTP request| Routes
+    IR --> IS
+    RR --> RS
+    IS --> IABC
+    RS --> RABC
+    IABC -.->|implements| IMEM
+    RABC -.->|implements| RMEM
+    IMEM -->|in-memory dict| DB
+    RMEM -->|in-memory dict| DB
+
+    style Routes fill:#dbeafe,stroke:#3b82f6
+    style Services fill:#dcfce7,stroke:#22c55e
+    style Repositories fill:#fef9c3,stroke:#eab308
+    style DB fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray:5
+```
+
+### Layer Rules
+
+| Layer | Allowed to call | Not allowed to call |
+|-------|----------------|---------------------|
+| Routes | Services only | Repositories, other Routes |
+| Services | Repositories only | FastAPI (`Request`/`Response`), other Services |
+| Repositories | Storage only | Services, Routes |
+
+### Request Flow
+
+```
+HTTP Request
+     │
+     ▼
+ [Routes]       Parse request body → call service → serialize response
+     │
+     ▼
+ [Services]     Enforce business rules (availability, status transitions, duplicates)
+     │
+     ▼
+ [Repositories] Read/write storage via ABC interface (swap in-memory → DB with zero service changes)
+```
+
+### Data Model Relationships
+
+```mermaid
+erDiagram
+    ITEM {
+        UUID id PK
+        string name
+        string sku UK
+        string description
+        int total_quantity
+        int reserved_quantity
+        datetime created_at
+        datetime updated_at
+    }
+    RESERVATION {
+        UUID id PK
+        UUID item_id FK
+        int quantity
+        string status
+        string requester_id
+        string notes
+        datetime expires_at
+        datetime created_at
+        datetime updated_at
+    }
+    ITEM ||--o{ RESERVATION : "has many"
+```
 
 ---
 
