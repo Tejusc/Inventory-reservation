@@ -6,6 +6,7 @@ A RESTful API for managing inventory and reservations, built with Python and Fas
 
 ## Table of Contents
 
+- [Task List](TASKS.md)
 - [Phases](#phases)
 - [Architecture](#architecture)
 - [Getting Started](#getting-started)
