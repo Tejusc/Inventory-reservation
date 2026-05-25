@@ -4,18 +4,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
+from app.dependencies import get_item_service
 from app.models.item import AvailabilityResponse, CreateItemRequest, ItemResponse, UpdateItemRequest
-from app.repositories.in_memory.item_repo import InMemoryItemRepository
 from app.services.item_service import DuplicateSKUError, ItemNotFoundError, ItemService
 
 router = APIRouter()
-
-_default_repo = InMemoryItemRepository()
-_default_service = ItemService(repository=_default_repo)
-
-
-def get_item_service() -> ItemService:
-    return _default_service
 
 
 @router.post("", response_model=ItemResponse, status_code=status.HTTP_201_CREATED)
